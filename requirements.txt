@@ -1,9 +1,3 @@
-<<<<<<< HEAD
 streamlit
 pandas
 requests
-=======
-streamlit
-pandas
-requests
->>>>>>> 9c85745 (Add requirements.txt)
