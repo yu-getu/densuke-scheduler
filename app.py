@@ -3,7 +3,7 @@ import streamlit as st
 import requests
 import io
 
-st.title("伝助 日程・シナリオ調整ツール（TRPG用）")
+st.title("伝助 日程・シナリオ調整ツール")
 
 # --- Step 1: 伝助URLまたはCSVアップロード ---
 input_method = st.radio("CSVファイルの取得方法を選択してください:", ["CSVアップロード", "伝助URLから取得"])
