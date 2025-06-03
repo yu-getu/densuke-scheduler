@@ -3,7 +3,7 @@ import streamlit as st
 import requests
 import io
 
-st.title("伝助 日程・シナリオ調整ツール（TRPG用）")
+st.title("伝助 日程・シナリオ調整ツール")
 
 # --- Step 1: 伝助URLまたはCSVアップロード ---
 input_method = st.radio("CSVファイルの取得方法を選択してください:", ["CSVアップロード", "伝助URLから取得"])
@@ -14,6 +14,21 @@ uploaded_file = None
 if input_method == "CSVアップロード":
     uploaded_file = st.file_uploader("伝助のCSVをアップロード", type="csv")
 elif input_method == "伝助URLから取得":
+    # --- ユーザー案内セクション ---Add commentMore actions
+    with st.expander("🔰 伝助からCSVファイルのURLを取得する手順（画像付き）"):
+        st.markdown("""
+        #### 手順1: 伝助の日程ページを下にスクロールし、ボタンを押す
+        下記のようなボタンです：
+        """)
+        st.image("images/step1.png", caption="伝助で作成された日程調整ページ", use_container_width=True)
+
+        st.markdown("""
+        #### 手順2: 「CSVデータを取得する」ボタンを右クリックして、**リンクのアドレスをコピー**します
+        """)
+        st.image("images/step2.png", caption="CSVリンクをコピーする手順", use_container_width=True)
+
+        st.markdown("#### 手順3: 下の入力欄にコピーしたURLを貼り付けてください。")
+    
     densuke_url = st.text_input("伝助のCSVダウンロードURLを入力:")
     if densuke_url:
         try:
@@ -108,14 +123,22 @@ if uploaded_file:
                                 st.markdown(f"**{info['day']} ({info['mark']}) - {info['count']}人**")
                                 st.write(info['participants'])
 
-                            # --- 日付ごとの詳細出力 ---
-                            target_days = sorted(set([info['day'] for info in participation_info]))
-                            selected_detail_day = st.selectbox("参加者を確認したい日付を選んでください", target_days)
-                            if selected_detail_day:
-                                selected_info = [i for i in participation_info if i['day'] == selected_detail_day]
-                                for entry in selected_info:
-                                    st.markdown(f"#### 「{selected_scenario}」：GM：{selected_gm}、メンバー")
-                                    st.write(entry['participants'])
+                            # --- 日付を指定して出力形式で表示・コピー機能付き ---
+                            candidate_days = [info['day'] for info in sorted_info]
+                            if candidate_days:
+                                selected_scenario_day = st.selectbox("日付を選んでメンバー表示:", candidate_days)
+                                for info in sorted_info:
+                                    if info['day'] == selected_scenario_day:
+                                        st.markdown("**参加メンバーを選んでください**")
+                                        selected_pl = st.multiselect("メンバー選択", info['participants'], default=info['participants'])
+                                        result_text = f"{info['day']},「{selected_scenario}」  GM：{selected_gm}、{', '.join(selected_pl)}"
+                                        st.success(result_text)
+                                        st.markdown("**コピー用：**")
+                                        st.code(result_text, language=None)
+                                        break
+                                    
+                                
+                                    
 
     except Exception as e:
         st.error(f"CSVの読み込みに失敗しました: {e}")
