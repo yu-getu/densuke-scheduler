@@ -64,14 +64,17 @@ if uploaded_file:
                 all_triangle = subset[(subset == '△').all(axis=1)]
                 all_double_circle = subset[(subset == '◎').all(axis=1)]
 
-                st.subheader("✅ 全員が◎の日")
-                st.write(all_double_circle.index.tolist() or "該当なし")
+                def show_dates(title, date_index):
+                    st.subheader(title)
+                    if date_index.empty:
+                        st.info("該当なし")
+                    else:
+                        df_dates = pd.DataFrame(date_index.index.tolist(), columns=["日付"])
+                        st.dataframe(df_dates, use_container_width=True)
 
-                st.subheader("✅ 全員が○の日")
-                st.write(all_circle.index.tolist() or "該当なし")
-
-                st.subheader("⚠ 全員が△の日")
-                st.write(all_triangle.index.tolist() or "該当なし")
+                show_dates("✅ 全員が◎の日", all_double_circle)
+                show_dates("✅ 全員が○の日", all_circle)
+                show_dates("⚠ 全員が△の日", all_triangle)
 
                 all_candidates = all_double_circle.index.tolist() + all_circle.index.tolist() + all_triangle.index.tolist()
                 if all_candidates:
@@ -92,17 +95,21 @@ if uploaded_file:
                     double_circles = scenario_row[scenario_row == '◎'].index.tolist()
                     single_circles = scenario_row[scenario_row == '○'].index.tolist()
 
-                    st.subheader("◎（GM希望など）")
-                    st.write(double_circles or "該当なし")
+                    def show_participants(title, participants):
+                        st.subheader(title)
+                        if not participants:
+                            st.info("該当なし")
+                        else:
+                            df_participants = pd.DataFrame(participants, columns=["参加者"])
+                            st.dataframe(df_participants, use_container_width=True)
 
-                    st.subheader("○（PL希望など）")
-                    st.write(single_circles or "該当なし")
+                    show_participants("◎（GM希望など）", double_circles)
+                    show_participants("○（PL希望など）", single_circles)
 
-                    # --- 新機能: GM選択と日程調査 ---
                     if double_circles:
                         selected_gm = st.selectbox("GM希望者から1人選んでください", double_circles)
                         if selected_gm:
-                            st.markdown(f"### \U0001F4C5 {selected_gm} のスケジュールに基づくPL希望者の参加可能日")
+                            st.markdown(f"### 📅 {selected_gm} のスケジュールに基づくPL希望者の参加可能日")
                             gm_schedule = df.loc[schedule_rows, selected_gm]
 
                             participation_info = []
@@ -119,11 +126,21 @@ if uploaded_file:
                                     })
 
                             sorted_info = sorted(participation_info, key=lambda x: x["count"], reverse=True)
-                            for info in sorted_info:
-                                st.markdown(f"**{info['day']} ({info['mark']}) - {info['count']}人**")
-                                st.write(info['participants'])
 
-                            # --- 日付を指定して出力形式で表示・コピー機能付き ---
+                            # 表形式で表示
+                            if sorted_info:
+                                table_data = []
+                                for info in sorted_info:
+                                    table_data.append({
+                                        "日付": info["day"],
+                                        "GMマーク": info["mark"],
+                                        "参加人数": info["count"],
+                                        "参加者": ', '.join(info["participants"])
+                                    })
+                                st.markdown("### 📋 参加可能日リスト（多い順）")
+                                st.dataframe(pd.DataFrame(table_data), use_container_width=True)
+
+                            # 日付を指定して出力形式で表示・コピー機能付き
                             candidate_days = [info['day'] for info in sorted_info]
                             if candidate_days:
                                 selected_scenario_day = st.selectbox("日付を選んでメンバー表示:", candidate_days)
@@ -131,14 +148,11 @@ if uploaded_file:
                                     if info['day'] == selected_scenario_day:
                                         st.markdown("**参加メンバーを選んでください**")
                                         selected_pl = st.multiselect("メンバー選択", info['participants'], default=info['participants'])
-                                        result_text = f"{info['day']},「{selected_scenario}」  GM：{selected_gm}、{', '.join(selected_pl)}"
+                                        result_text = f"「{selected_scenario}」：GM：{selected_gm}、{', '.join(selected_pl)}"
                                         st.success(result_text)
                                         st.markdown("**コピー用：**")
                                         st.code(result_text, language=None)
                                         break
-                                    
-                                
-                                    
 
     except Exception as e:
         st.error(f"CSVの読み込みに失敗しました: {e}")
